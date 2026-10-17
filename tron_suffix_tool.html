@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>TRON 區塊尾碼研究工具</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#121c2d;--panel2:#172338;--line:#263750;--text:#edf4ff;--muted:#a7b7cc;--cyan:#70e1df;--gold:#ffd166;--green:#7ee0a3;--red:#ff8c91;--blue:#89b4ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1000px 500px at 10% -10%,#20375a 0%,transparent 60%),var(--bg);color:var(--text);font:16px/1.48 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
+main{max-width:900px;margin:0 auto;padding:18px 14px 44px}.hero{padding:10px 2px 18px}.eyebrow{font-size:12px;letter-spacing:.13em;color:var(--cyan);font-weight:800}.hero h1{font-size:clamp(25px,6vw,36px);line-height:1.15;margin:8px 0}.hero p{margin:8px 0 0;color:var(--muted);font-size:14px}
+.panel{background:linear-gradient(145deg,rgba(23,35,56,.97),rgba(17,27,43,.97));border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 10px 28px #0002}.panel h2{font-size:18px;margin:0 0 12px}.row{display:flex;gap:10px;flex-wrap:wrap}.field{flex:1 1 210px;min-width:0}.label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}input{width:100%;min-width:0;background:#0a1322;border:1px solid #344965;color:var(--text);border-radius:12px;padding:13px 12px;font-size:16px;outline:none}input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #70e1df1f}button{border:0;border-radius:12px;padding:12px 15px;font-weight:800;font-size:14px;cursor:pointer;min-height:44px;background:var(--cyan);color:#071521}button.secondary{background:#22334b;color:var(--text);border:1px solid #3a4f6c}button.warn{background:#51343a;color:#ffdce0;border:1px solid #855057}button:disabled{opacity:.6;cursor:wait}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.hint{font-size:12px;color:var(--muted);margin-top:8px}.result-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{background:#0b1525;border:1px solid #263a55;border-radius:14px;padding:13px;min-width:0}.metric .k{font-size:12px;color:var(--muted)}.metric .v{font-size:24px;font-weight:900;letter-spacing:.06em;word-break:break-word;margin-top:3px}.metric .sub{font-size:12px;color:var(--muted);margin-top:4px}.status{margin-top:12px;border-radius:12px;padding:11px 12px;background:#0b1525;border:1px solid #344965;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}.status.good{border-color:#326f56;color:var(--green)}.status.bad{border-color:#805057;color:#ffb7bb}.status.wait{border-color:#76613c;color:#ffdfa0}.badge{display:inline-block;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800;background:#23354c;color:#d7e7ff;white-space:nowrap}.badge.good{background:#173f34;color:#8cf0b3}.badge.bad{background:#4a252c;color:#ffb6bb}.badge.wait{background:#493b20;color:#ffe29f}.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:630px;background:#0d1727;font-size:13px}th,td{text-align:left;padding:10px;border-bottom:1px solid #25364d;vertical-align:top}th{color:#b8c8dc;background:#152237;position:sticky;top:0}td code{color:#bcebea;font-size:12px}tr:last-child td{border-bottom:0}.empty{color:var(--muted);text-align:center;padding:18px}.footer{font-size:12px;color:var(--muted);padding:4px 2px 0}.working{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-right:7px;box-shadow:0 0 0 0 #ffd16688;animation:pulse 1s infinite}@keyframes pulse{70%{box-shadow:0 0 0 7px #ffd16600}100%{box-shadow:0 0 0 0 #ffd16600}}
+@media(max-width:520px){main{padding:12px 10px 30px}.panel{padding:13px;border-radius:15px}.result-grid{grid-template-columns:1fr 1fr}.metric .v{font-size:20px}.actions button{flex:1 1 145px}.hero p{font-size:13px}}
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="eyebrow">TRON · TAIL-4 LAB</div>
+    <h1>🦍 區塊尾碼研究工具</h1>
+    <p>先算候選尾四位，再查真實 Block ID 核對；每次結果都可保存、複製與匯出。</p>
+  </header>
+
+  <section class="panel">
+    <h2>① 輸入區塊高度</h2>
+    <div class="row">
+      <div class="field"><label class="label" for="height">區塊高度（十進位數字）</label><input id="height" inputmode="numeric" autocomplete="off" placeholder="例如：87191610" /></div>
+      <div class="field"><label class="label" for="actualId">真實 Block ID（可選，手動核對時填）</label><input id="actualId" autocomplete="off" autocapitalize="characters" placeholder="貼上 64 位 ID，或只填尾四位" /></div>
+    </div>
+    <div class="actions">
+      <button id="calcBtn">算候選尾碼</button>
+      <button id="fetchBtn">查 TRONSCAN 並核對</button>
+      <button class="secondary" id="manualBtn">手動核對真實尾碼</button>
+    </div>
+    <div class="hint">候選算法固定為 SHA-256（區塊高度的十進位字串），取摘要最後 4 個十六進位字元。真實尾碼只以 64 位 Block ID 為準。</div>
+  </section>
+
+  <section class="panel">
+    <h2>② 本次結果</h2>
+    <div class="result-grid">
+      <div class="metric"><div class="k">輸入高度</div><div class="v" id="outHeight">—</div><div class="sub">Target height</div></div>
+      <div class="metric"><div class="k">SHA-256 候選尾四位</div><div class="v" id="outCandidate">—</div><div class="sub">候選基準，不等於真實 ID</div></div>
+      <div class="metric"><div class="k">真實 Block ID 尾四位</div><div class="v" id="outActual">—</div><div class="sub" id="outTime">尚未查到真實區塊</div></div>
+      <div class="metric"><div class="k">本次核對結果</div><div class="v" id="outMatch">待核對</div><div class="sub">只在有真實尾碼時判定</div></div>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite">輸入高度後，按「算候選尾碼」或「查 TRONSCAN 並核對」。</div>
+    <div class="actions"><button class="secondary" id="copyBtn">複製本次結果</button><button class="secondary" id="exportBtn">匯出 CSV</button><button class="secondary" id="jsonBtn">備份 JSON</button></div>
+  </section>
+
+  <section class="panel">
+    <h2>③ 尾碼驗證紀錄 <span id="recordCount" class="badge">0 筆</span></h2>
+    <div class="hint" style="margin:0 0 10px">已放入前面保存的 8 筆候選基準。缺少真實尾碼的紀錄會明確標示，不會補造結果。此裝置上的瀏覽器會嘗試保存新增資料。</div>
+    <div class="table-wrap"><table><thead><tr><th>區塊高度</th><th>候選尾四位</th><th>真實尾四位</th><th>結果</th><th>核對時間</th></tr></thead><tbody id="recordsBody"></tbody></table></div>
+    <div class="actions"><button class="secondary" id="refreshBtn">刷新紀錄</button><button class="warn" id="clearBtn">清空紀錄</button></div>
+  </section>
+  <p class="footer">提示：SHA-256 高度候選值是固定基準測試方法，不能單靠它保證預測出真實 TRON Block ID。網路查詢若被瀏覽器/CORS 阻擋，可貼上真實 Block ID 手動核對；手動結果會標明來源。</p>
+</main>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const STORE='tron_tail4_lab_v1';
+const SEED=[
+ {height:'87191010',candidate:'D38A',actual:'',status:'歷史紀錄待補真實值',time:'歷史紀錄（時間未保存）',source:'saved'},
+ {height:'87191110',candidate:'16F5',actual:'',status:'歷史紀錄待補真實值',time:'歷史紀錄（時間未保存）',source:'saved'},
+ {height:'87191150',candidate:'AD2D',actual:'',status:'歷史紀錄待補真實值',time:'歷史紀錄（時間未保存）',source:'saved'},
+ {height:'87191170',candidate:'A397',actual:'A397',status:'命中（使用者回報）',time:'歷史紀錄（時間未保存）',source:'saved'},
+ {height:'87191270',candidate:'03DD',actual:'',status:'未命中（使用者回報；真實尾碼未保存）',time:'歷史紀錄（時間未保存）',source:'saved'},
+ {height:'87191310',candidate:'7B9A',actual:'7B9A',status:'命中（使用者回報）',time:'歷史紀錄（時間未保存）',source:'saved'},
+ {height:'87191330',candidate:'CCBC',actual:'',status:'未命中（使用者回報；真實尾碼未保存）',time:'歷史紀錄（時間未保存）',source:'saved'},
+ {height:'87191530',candidate:'6A00',actual:'6A00',status:'命中（使用者回報）',time:'歷史紀錄（時間未保存）',source:'saved'}
+];
+let records=[]; let current={height:'',candidate:'',actual:'',fullId:'',blockTime:'',status:'',time:''};
+function loadRecords(){
+ try{const raw=localStorage.getItem(STORE); if(raw!==null){const parsed=JSON.parse(raw);records=Array.isArray(parsed)?parsed:SEED.slice();}else{records=SEED.slice();saveRecords();}}
+ catch(e){records=SEED.slice(); setStatus('瀏覽器儲存功能不可用；目前資料只保留在這次頁面開啟期間。','wait');}
+ renderRecords();
+}
+function saveRecords(){try{localStorage.setItem(STORE,JSON.stringify(records));}catch(e){setStatus('瀏覽器無法保存資料；請按「備份 JSON」或「匯出 CSV」保留紀錄。','wait');}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function renderRecords(){
+ const body=$('recordsBody'); $('recordCount').textContent=records.length+' 筆';
+ if(!records.length){body.innerHTML='<tr><td class="empty" colspan="5">目前沒有紀錄。算出候選值後可新增測試。</td></tr>';return;}
+ body.innerHTML=records.slice().reverse().map(r=>{
+   let cls=/未命中/.test(r.status)?'bad':/命中/.test(r.status)?'good':/等待|待補|待核對|候選/.test(r.status)?'wait':'';
+   return '<tr><td><code>'+esc(r.height)+'</code></td><td><code>'+esc(r.candidate||'—')+'</code></td><td><code>'+esc(r.actual||'—')+'</code></td><td><span class="badge '+cls+'">'+esc(r.status||'—')+'</span></td><td>'+esc(r.time||'—')+'</td></tr>';
+ }).join('');
+}
+function nowText(){return new Date().toLocaleString('zh-TW',{hour12:false});}
+function setStatus(msg,kind=''){const el=$('status');el.className='status'+(kind?' '+kind:'');el.textContent=msg;}
+function validHeight(){const h=$('height').value.trim();if(!/^\d{1,20}$/.test(h)){setStatus('請輸入正確的十進位區塊高度（只填數字）。','bad');return null;}return h.replace(/^0+(?=\d)/,'');}
+// Pure JavaScript SHA-256 so the calculator can also work when opened as a local HTML file.
+function sha256(ascii){
+ const math=Math, maxWord=math.pow(2,32); const hash=[], k=[]; let primeCounter=0;
+ const isPrime=n=>{for(let j=2;j*j<=n;j++)if(n%j===0)return false;return n>1;};
+ for(let candidate=2;primeCounter<64;candidate++)if(isPrime(candidate)){if(primeCounter<8)hash[primeCounter]=(math.sqrt(candidate)*maxWord)|0;k[primeCounter]=(math.cbrt(candidate)*maxWord)|0;primeCounter++;}
+ const bytes=unescape(encodeURIComponent(ascii)); const bitLength=bytes.length*8; const msg=bytes+'\x80';
+ let data=msg+'\x00'.repeat((56-(msg.length%64)+64)%64); const hi=Math.floor(bitLength/4294967296),lo=bitLength>>>0;
+ data+=String.fromCharCode((hi>>>24)&255,(hi>>>16)&255,(hi>>>8)&255,hi&255,(lo>>>24)&255,(lo>>>16)&255,(lo>>>8)&255,lo&255);
+ const rotr=(x,n)=>(x>>>n)|(x<<(32-n));
+ for(let offset=0;offset<data.length;offset+=64){
+   const w=new Array(64); for(let i=0;i<16;i++){const p=offset+i*4;w[i]=((data.charCodeAt(p)&255)<<24)|((data.charCodeAt(p+1)&255)<<16)|((data.charCodeAt(p+2)&255)<<8)|(data.charCodeAt(p+3)&255);}
+   for(let i=16;i<64;i++){const x=w[i-15],y=w[i-2],s0=rotr(x,7)^rotr(x,18)^(x>>>3),s1=rotr(y,17)^rotr(y,19)^(y>>>10);w[i]=(w[i-16]+s0+w[i-7]+s1)|0;}
+   let [a,b,c,d,e,f,g,h]=hash;
+   for(let i=0;i<64;i++){const S1=rotr(e,6)^rotr(e,11)^rotr(e,25),ch=(e&f)^(~e&g),t1=(h+S1+ch+k[i]+w[i])|0,S0=rotr(a,2)^rotr(a,13)^rotr(a,22),maj=(a&b)^(a&c)^(b&c),t2=(S0+maj)|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}
+   hash[0]=(hash[0]+a)|0;hash[1]=(hash[1]+b)|0;hash[2]=(hash[2]+c)|0;hash[3]=(hash[3]+d)|0;hash[4]=(hash[4]+e)|0;hash[5]=(hash[5]+f)|0;hash[6]=(hash[6]+g)|0;hash[7]=(hash[7]+h)|0;
+ }
+ return hash.map(v=>(v>>>0).toString(16).padStart(8,'0')).join('').toUpperCase();
+}
+function candidateFor(h){return sha256(h).slice(-4);}
+function updateCurrentUI(){
+ $('outHeight').textContent=current.height||'—';$('outCandidate').textContent=current.candidate||'—';$('outActual').textContent=current.actual||'—';$('outTime').textContent=current.blockTime?('區塊時間：'+current.blockTime):(current.actual?'由手動尾碼核對':'尚未查到真實區塊');
+ $('outMatch').textContent=current.actual?(current.candidate===current.actual?'命中':'未命中'):'待核對';
+}
+function upsertRecord(r){const i=records.findIndex(x=>String(x.height)===String(r.height));if(i>=0){const old=records[i];const incoming=Object.assign({},r);if(!incoming.actual&&old.actual){incoming.actual=old.actual;incoming.fullId=old.fullId||'';incoming.blockTime=old.blockTime||'';if(/僅候選|查詢失敗|等待中/.test(incoming.status||''))incoming.status=old.status||incoming.status;}else if(!incoming.actual&&!old.actual&&/(僅候選|查詢失敗|等待中)/.test(incoming.status||'')&&/(命中|未命中)/.test(old.status||'')){incoming.status=old.status;}records[i]=Object.assign({},old,incoming);}else records.push(r);saveRecords();renderRecords();}
+function calc(){const h=validHeight();if(h===null)return false;const c=candidateFor(h);current={height:h,candidate:c,actual:'',fullId:'',blockTime:'',status:'僅候選，尚未核對',time:nowText()};updateCurrentUI();setStatus('已算出候選尾四位 '+c+'。這是 SHA-256 高度基準值，尚未與真實 Block ID 核對。','wait');upsertRecord({height:h,candidate:c,actual:'',status:'僅候選，尚未核對',time:current.time,source:'calculated'});return true;}
+function getNum(obj,keys){for(const path of keys){let v=obj;for(const part of path.split('.'))v=v&&v[part];if(v!==undefined&&v!==null&&v!==''&&Number.isFinite(Number(v)))return Number(v);}return null;}
+function getText(obj,keys){for(const path of keys){let v=obj;for(const part of path.split('.'))v=v&&v[part];if(typeof v==='string'&&v.trim())return v.trim();}return '';}
+function normalizeBlock(data){let o=data;for(let i=0;i<3&&o&&typeof o==='object'&&(o.data||o.result)&&!o.blockID&&!o.block_id&&!o.block_header;i++){o=o.data||o.result;}if(Array.isArray(o))o=o[0]||{};const id=getText(o,['blockID','blockId','block_id','blockid','block_header.blockID','block_header.block_id']);const height=getNum(o,['block_header.raw_data.number','raw_data.number','number','height','blockNumber','block_number']);const ts=getNum(o,['block_header.raw_data.timestamp','raw_data.timestamp','timestamp','blockTime']);return {id:id.replace(/^0x/i,''),height,timestamp:ts,raw:o};}
+async function fetchJson(url,timeout=13000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeout);try{const response=await fetch(url,{method:'GET',cache:'no-store',headers:{'Accept':'application/json'},signal:controller.signal});const text=await response.text();let data;try{data=JSON.parse(text);}catch(e){throw new Error('伺服器沒有回傳可讀 JSON（HTTP '+response.status+'）。');}if(!response.ok)throw new Error('TRONSCAN 回應 HTTP '+response.status+'。');return data;}catch(e){if(e.name==='AbortError')throw new Error('查詢逾時，請稍後重試或手動貼上 Block ID。');if(e instanceof TypeError)throw new Error('網路/CORS 讀取被瀏覽器阻擋；可手動貼上真實 Block ID 核對。');throw e;}finally{clearTimeout(timer);}}
+async function queryBlock(h){const url='https://apilist.tronscanapi.com/api/block?number='+encodeURIComponent(h);const data=await fetchJson(url);const b=normalizeBlock(data);if(!b.height||!b.id)return {ok:false,block:b};if(String(b.height)!==String(h))return {ok:false,block:b,mismatch:true};if(!/^[0-9A-Fa-f]{64}$/.test(b.id))return {ok:false,block:b,badId:true};return {ok:true,block:b};}
+function lockButtons(v){['calcBtn','fetchBtn','manualBtn'].forEach(id=>$(id).disabled=v);}
+async function fetchAndVerify(){let h=validHeight();if(h===null)return;let c=candidateFor(h);current={height:h,candidate:c,actual:'',fullId:'',blockTime:'',status:'查詢中',time:nowText()};updateCurrentUI();setStatus('正在向 TRONSCAN 查詢高度 '+h+'…','wait');lockButtons(true);try{
+  let r=await queryBlock(h);
+  if(!r.ok){
+    if(r.mismatch){throw new Error('回傳高度不一致：要求 '+h+'，實際回傳 '+r.block.height+'；沒有把它當成成功。');}
+    if(r.badId)throw new Error('回傳資料的 Block ID 不是 64 位十六進位字串；嚴格核對未通過。');
+    // Check the latest height only to distinguish not-yet-mined from a bad specific response.
+    try{const latestData=await fetchJson('https://apilist.tronscanapi.com/api/block?number=latest');const latestBlock=normalizeBlock(latestData);if(latestBlock.height!==null&&latestBlock.height<Number(h)&&/^[0-9A-Fa-f]{64}$/.test(latestBlock.id)){current.status='等待目標區塊';current.time=nowText();updateCurrentUI();upsertRecord({height:h,candidate:c,actual:'',status:'等待中（HEAD 尚未到達）',time:current.time,source:'api'});setStatus('目標區塊 '+h+' 尚未到達。目前查到的最新高度為 '+latestBlock.height+'。保留候選值 '+c+'，之後可再次查詢。','wait');return;}}
+    catch(e){}
+    throw new Error('尚未取得「高度完全相同 + 64 位 Block ID」的有效回應；可能是該高度尚未可查，或伺服器回應格式不完整。沒有判定命中。');
+  }
+  const actual=r.block.id.slice(-4).toUpperCase();const blockTime=r.block.timestamp?new Date(r.block.timestamp).toLocaleString('zh-TW',{hour12:false}):'';const hit=actual===c;current={height:h,candidate:c,actual,fullId:r.block.id.toUpperCase(),blockTime,status:hit?'命中':'未命中',time:nowText()};updateCurrentUI();upsertRecord({height:h,candidate:c,actual,fullId:current.fullId,blockTime,status:hit?'命中（TRONSCAN）':'未命中（TRONSCAN）',time:current.time,source:'api'});setStatus((hit?'核對命中。':'核對未命中。')+'\n高度：'+h+'\n候選尾碼：'+c+'\n真實 Block ID 尾碼：'+actual+'\n完整 Block ID：'+current.fullId+(blockTime?'\n區塊時間：'+blockTime:''),hit?'good':'bad');
+ }catch(e){current.status='查詢失敗';current.time=nowText();updateCurrentUI();upsertRecord({height:h,candidate:c,actual:'',status:'查詢失敗（未判定）',time:current.time,source:'api'});setStatus((e.message||'查詢失敗')+'\n候選值仍可保留：'+c+'。也可以把完整 Block ID 或真實尾四位貼到上方欄位手動核對。','bad');}
+ finally{lockButtons(false);}}
+function manualVerify(){let h=validHeight();if(h===null)return;const raw=$('actualId').value.trim().replace(/\s+/g,'').replace(/^0x/i,'').toUpperCase();if(!raw){setStatus('請在「真實 Block ID」欄位貼上完整 64 位 Block ID，或只輸入真實尾四位。','bad');return;}let actual='';let full='';if(/^[0-9A-F]{64}$/.test(raw)){full=raw;actual=raw.slice(-4);}else if(/^[0-9A-F]{4}$/.test(raw)){actual=raw;}else{setStatus('格式不正確：請貼 64 位十六進位 Block ID，或恰好 4 位十六進位尾碼。','bad');return;}
+ const c=candidateFor(h),hit=actual===c;current={height:h,candidate:c,actual,fullId:full,blockTime:'',status:hit?'命中':'未命中',time:nowText()};updateCurrentUI();upsertRecord({height:h,candidate:c,actual,fullId:full,blockTime:'',status:(hit?'命中':'未命中')+'（手動核對）',time:current.time,source:'manual'});setStatus((hit?'手動核對命中。':'手動核對未命中。')+'\n高度：'+h+'\n候選尾碼：'+c+'\n真實尾碼：'+actual+(full?'\n完整 Block ID：'+full:'\n注意：這次只輸入了 4 位尾碼，未驗證完整 Block ID。'),hit?'good':'bad');}
+function resultText(){return ['TRON 區塊尾碼研究結果','區塊高度：'+(current.height||'—'),'SHA-256 候選尾四位：'+(current.candidate||'—'),'真實尾四位：'+(current.actual||'未核對'),'完整 Block ID：'+(current.fullId||'未取得'),'結果：'+(current.actual?(current.candidate===current.actual?'命中':'未命中'):'待核對'),'區塊時間：'+(current.blockTime||'未取得'),'核對時間：'+(current.time||'—')].join('\n');}
+async function copyText(text){try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(text);setStatus('已複製到剪貼簿。','good');return;}}catch(e){}const area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();try{const ok=document.execCommand('copy');setStatus(ok?'已複製到剪貼簿。':'無法直接複製，請長按選取下方本次結果。',ok?'good':'wait');if(!ok)window.prompt('請手動複製：',text);}catch(e){window.prompt('請手動複製：',text);}finally{area.remove();}}
+function download(filename,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);}
+function csvCell(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}
+$('calcBtn').addEventListener('click',calc);$('fetchBtn').addEventListener('click',fetchAndVerify);$('manualBtn').addEventListener('click',manualVerify);$('copyBtn').addEventListener('click',()=>copyText(resultText()));
+$('exportBtn').addEventListener('click',()=>{const rows=[['height','candidate_tail4','actual_tail4','status','block_time','checked_at','source','full_block_id'],...records.map(r=>[r.height,r.candidate,r.actual,r.status,r.blockTime,r.time,r.source,r.fullId])];download('tron_tail4_records.csv','\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8');setStatus('CSV 已匯出；建議保存到手機下載資料夾作備份。','good');});
+$('jsonBtn').addEventListener('click',()=>{download('tron_tail4_backup.json',JSON.stringify({exportedAt:new Date().toISOString(),algorithm:'SHA-256(decimal block-height string), last 4 hex chars',records},null,2),'application/json;charset=utf-8');setStatus('JSON 備份已匯出，可用於保留與轉移全部紀錄。','good');});
+$('refreshBtn').addEventListener('click',()=>{loadRecords();setStatus('已刷新本機紀錄。','good');});$('clearBtn').addEventListener('click',()=>{if(confirm('確定清空這個工具保存的全部紀錄？建議先匯出備份。')){records=[];saveRecords();renderRecords();setStatus('紀錄已清空。','wait');}});
+$('height').addEventListener('keydown',e=>{if(e.key==='Enter')calc();});
+loadRecords();
+// Sanity check the locally implemented SHA-256 against a known saved baseline.
+if(candidateFor('87191010')!=='D38A'){setStatus('注意：SHA-256 自檢未通過，請不要採信本次計算。','bad');}
+})();
+</script>
+</body>
+</html>
